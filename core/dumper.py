@@ -28,7 +28,6 @@ class Dumper():
         mod_conn = ConnConfig(**self.__conn.__dict__)
         if self.__tunnel:
             local_port = self.__tunnel.start()
-            print(local_port)
             mod_conn.host = "localhost"
             mod_conn.port = local_port
 
@@ -89,6 +88,5 @@ class PgDumper(Dumper):
         ], env=cenv)
 
         os.waitpid(p.pid, 0)
-        print(p.stderr, p.stdout)
 
         return current_name, True
