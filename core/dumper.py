@@ -58,10 +58,18 @@ class MySqlDumper(Dumper):
     def dump_db(self, conn_config: ConnConfig):
         current_name = self.get_name()
         binary = os.path.join(config.BINARY_LOCATION, "mysql", "mysqldump")
-        command = "%s -h %s --protocol=tcp -P %s -u %s -p%s %s > %s" % (
-            binary, conn_config.host, conn_config.port, conn_config.user, conn_config.password, conn_config.database, current_name)
 
-        p = subprocess.Popen(command, shell=True)
+        p = subprocess.Popen([
+            binary,
+            "--no-tablespaces",
+            "-h", conn_config.host,
+            "--protocol=tcp",
+            "-P", str(conn_config.port),
+            "-u", conn_config.user,
+            "-p%s" % (conn_config.password),
+            conn_config.database,
+            "-r", current_name
+        ])
         os.waitpid(p.pid, 0)
 
         return current_name, True
@@ -71,11 +79,20 @@ class PgDumper(Dumper):
 
     def dump_db(self, conn_config: ConnConfig):
         current_name = self.get_name()
-        binary = os.path.join(config.BINARY_LOCATION, "postgres", "pg_dump")
-        command = "PGPASSWORD=%s %s -h %s -p %s -U %s -d %s > %s" % (
-            conn_config.password, binary, conn_config.host, conn_config.port, conn_config.user, conn_config.database, current_name)
 
-        p = subprocess.Popen(command, shell=True)
+        binary = os.path.join(config.BINARY_LOCATION, "postgres", "pg_dump")
+        cenv = os.environ.copy()
+        cenv["PGPASSWORD"] = conn_config.password
+        p = subprocess.Popen([
+            binary,
+            "-h", conn_config.host,
+            "-p", str(conn_config.port),
+            "-U", conn_config.user,
+            "-d", conn_config.database,
+            "-f", current_name
+        ], env=cenv)
+
         os.waitpid(p.pid, 0)
+        print(p.stderr, p.stdout)
 
         return current_name, True
