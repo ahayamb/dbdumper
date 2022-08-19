@@ -37,10 +37,6 @@ class Dumper():
         if self.__tunnel:
             self.__tunnel.stop()
 
-    def dump_with_callback(self, callback):
-        self.dump()
-        callback()
-
     def get_name(self):
         location = config.DUMP_LOCATION
         current_date = datetime.datetime.now().astimezone().strftime('%Y-%m-%d')
