@@ -6,6 +6,7 @@ from copy import copy
 from dataclasses import dataclass
 from typing import Tuple
 
+from core.config import config
 from core.tunnel import Tunnel, TunnelConfig
 
 
@@ -41,7 +42,7 @@ class Dumper():
         callback()
 
     def get_name(self):
-        location = os.environ.get("DUMPER_PATH", "backup")
+        location = config.DUMP_LOCATION
         current_date = datetime.datetime.now().astimezone().strftime('%Y-%m-%d')
         if not os.path.exists(location):
             os.makedirs(location)
@@ -56,8 +57,9 @@ class MySqlDumper(Dumper):
 
     def dump_db(self, conn_config: ConnConfig):
         current_name = self.get_name()
-        command = "bin/mysql/mysqldump -h %s --protocol=tcp -P %s -u %s -p%s %s > %s" % (
-            conn_config.host, conn_config.port, conn_config.user, conn_config.password, conn_config.database, current_name)
+        binary = os.path.join(config.BINARY_LOCATION, "mysql", "mysqldump")
+        command = "%s -h %s --protocol=tcp -P %s -u %s -p%s %s > %s" % (
+            binary, conn_config.host, conn_config.port, conn_config.user, conn_config.password, conn_config.database, current_name)
 
         p = subprocess.Popen(command, shell=True)
         os.waitpid(p.pid, 0)
@@ -69,8 +71,9 @@ class PgDumper(Dumper):
 
     def dump_db(self, conn_config: ConnConfig):
         current_name = self.get_name()
-        command = "PGPASSWORD=%s bin/postgres/pg_dump -h %s -p %s -U %s -d %s > %s" % (
-            conn_config.password, conn_config.host, conn_config.port, conn_config.user, conn_config.database, current_name)
+        binary = os.path.join(config.BINARY_LOCATION, "postgres", "pg_dump")
+        command = "PGPASSWORD=%s %s -h %s -p %s -U %s -d %s > %s" % (
+            conn_config.password, binary, conn_config.host, conn_config.port, conn_config.user, conn_config.database, current_name)
 
         p = subprocess.Popen(command, shell=True)
         os.waitpid(p.pid, 0)
