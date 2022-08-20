@@ -31,10 +31,22 @@ class Dumper():
             mod_conn.host = "localhost"
             mod_conn.port = local_port
 
-        self.dump_db(mod_conn)
+        filename, _ = self.dump_db(mod_conn)
+        saved_filename = filename
+        if config.ENABLE_COMPRESSION:
+            from zipfile import ZipFile, ZIP_LZMA
+
+            compressed_filename = '%s.zip' % (filename)
+            with ZipFile(compressed_filename, mode="w", compresslevel=4, compression=ZIP_LZMA, allowZip64=True) as zf:
+                zf.write(filename)
+
+            os.remove(filename)
+            saved_filename = compressed_filename
 
         if self.__tunnel:
             self.__tunnel.stop()
+
+        return saved_filename
 
     def get_name(self):
         location = config.DUMP_LOCATION
@@ -87,7 +99,6 @@ class PgDumper(Dumper):
             "-d", conn_config.database,
             "-f", current_name
         ], env=cenv)
-
         os.waitpid(p.pid, 0)
 
         return current_name, True
