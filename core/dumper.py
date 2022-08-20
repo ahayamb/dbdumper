@@ -59,6 +59,7 @@ class MySqlDumper(Dumper):
             "--no-tablespaces",
             "-h", conn_config.host,
             "--protocol=tcp",
+            "--max-allowed-packet=1GB",
             "-P", str(conn_config.port),
             "-u", conn_config.user,
             "-p%s" % (conn_config.password),
